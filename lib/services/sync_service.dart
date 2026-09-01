@@ -89,6 +89,16 @@ class SyncService {
   /// Add a reading to pending (stored locally)
   static Future<void> addPendingReading(String meterNumber, double reading) async {
     final readings = getPendingReadings();
+    final currentMonth = DateTime.now().toIso8601String().substring(0, 7);
+    final alreadyPending = readings.any((item) {
+      final timestamp = item['timestamp']?.toString() ?? '';
+      return item['meter_number']?.toString() == meterNumber &&
+          timestamp.startsWith(currentMonth);
+    });
+    if (alreadyPending) {
+      throw Exception('تم إدخال قراءة لهذا العداد خلال هذا الشهر');
+    }
+
     readings.add({
       'meter_number': meterNumber,
       'reading': reading,
