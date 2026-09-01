@@ -4,11 +4,18 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Regenerate Android project
+      - name: Regenerate Android platform
         script: flutter create --platforms=android --project-name meter_collector .
-      - name: Get dependencies
+      - name: Set Android compile SDK
+        script: |
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i '' 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i '' 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/' android/app/build.gradle
+          fi
+      - name: Install Flutter packages
         script: flutter pub get
-      - name: Build app
-        script: flutter build appbundle --release
+      - name: Build Android app bundle
+        script: flutter build appbundle --debug
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/bundle/debug/*.aab
