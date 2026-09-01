@@ -1,0 +1,14 @@
+workflows:
+  android-debug:
+    name: Android debug build
+    environment:
+      flutter: stable
+    scripts:
+      - name: Regenerate Android project
+        script: flutter create --platforms=android --project-name meter_collector .
+      - name: Get dependencies
+        script: flutter pub get
+      - name: Build app
+        script: flutter build appbundle --debug
+    artifacts:
+      - build/app/outputs/bundle/debug/*.aab
