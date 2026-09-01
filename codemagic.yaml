@@ -1,6 +1,6 @@
 workflows:
-  android-debug:
-    name: Android debug build
+  android-apk:
+    name: Android release APK
     environment:
       flutter: stable
     scripts:
@@ -15,7 +15,7 @@ workflows:
           fi
       - name: Install Flutter packages
         script: flutter pub get
-      - name: Build Android app bundle
-        script: flutter build appbundle --debug
+      - name: Build Android APK
+        script: flutter build apk --release
     artifacts:
-      - build/app/outputs/bundle/debug/*.aab
+      - build/app/outputs/flutter-apk/app-release.apk
