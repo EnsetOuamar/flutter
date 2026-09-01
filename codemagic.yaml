@@ -1,5 +1,5 @@
 workflows:
-  android-apk:
+  android-debug:
     name: Android release APK
     environment:
       flutter: stable
