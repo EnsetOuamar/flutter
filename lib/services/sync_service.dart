@@ -178,6 +178,22 @@ class SyncService {
     if (readings.isEmpty) {
       return {'status': 'no_data', 'message': 'No readings to sync'};
     }
+
+    final customers = await fetchCustomers();
+    final customerMeters = customers
+        .map((customer) => customer['meter_number'].toString())
+        .toSet();
+    final pendingMeters =
+        readings.map((reading) => reading['meter_number'].toString()).toList();
+    final pendingMeterSet = pendingMeters.toSet();
+    if (pendingMeters.length != pendingMeterSet.length ||
+        pendingMeterSet.length != customerMeters.length ||
+        !pendingMeterSet.containsAll(customerMeters)) {
+      throw Exception(
+        'يجب إدخال قراءة واحدة لكل العدادات قبل المزامنة '
+        '(${pendingMeterSet.length}/${customerMeters.length})',
+      );
+    }
     
     try {
       final url = Uri.parse('http://$serverAddress:5000/api/sync/readings');
