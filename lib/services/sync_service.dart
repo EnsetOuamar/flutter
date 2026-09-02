@@ -43,22 +43,65 @@ class SyncService {
     if (serverAddress == null || serverAddress.isEmpty) {
       throw Exception('Server address not configured');
     }
-    
+
     try {
       final url = Uri.parse('http://$serverAddress:5000/api/customers');
       final response = await http.get(url).timeout(
         const Duration(seconds: 10),
         onTimeout: () => http.Response('timeout', 408),
       );
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+        final customers = data
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
+
+        if (customers.isEmpty) {
+          return [];
+        }
+
+        return customers;
       } else {
         throw Exception('Failed to fetch customers: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error fetching customers: $e');
+    }
+  }
+
+  /// Check the desktop database state directly by requesting a live list.
+  static Future<Map<String, dynamic>> checkDatabaseState() async {
+    final serverAddress = getServerAddress();
+    if (serverAddress == null || serverAddress.isEmpty) {
+      throw Exception('Server address not configured');
+    }
+
+    try {
+      final url = Uri.parse('http://$serverAddress:5000/api/customers');
+      final response = await http.get(url).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => http.Response('timeout', 408),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return {
+          'status': 'ok',
+          'count': data.length,
+          'customers': data,
+        };
+      }
+
+      return {
+        'status': 'error',
+        'message': 'Failed to fetch from desktop (${response.statusCode})',
+      };
+    } catch (e) {
+      return {
+        'status': 'error',
+        'message': e.toString(),
+      };
     }
   }
   
