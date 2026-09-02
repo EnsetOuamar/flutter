@@ -213,7 +213,17 @@ class SyncService {
         }
         return result;
       } else {
-        throw Exception('Sync failed: ${response.statusCode}');
+        String details = response.body;
+        try {
+          final errorData = json.decode(response.body) as Map<String, dynamic>;
+          final errors = errorData['errors'];
+          details = errors is List
+              ? errors.join('; ')
+              : errorData['message']?.toString() ?? details;
+        } catch (_) {
+          // Keep the raw response when the server does not return JSON.
+        }
+        throw Exception('Sync failed: ${response.statusCode} - $details');
       }
     } catch (e) {
       throw Exception('Error syncing readings: $e');
