@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _refreshCustomers() {
+  Future<void> _refreshCustomers() async {
     setState(() {
       if (_serverAddress != null && _serverAddress!.isNotEmpty) {
         _customersFuture = SyncService.fetchCustomers();
@@ -45,6 +45,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _customersFuture = Future.error('No server configured');
       }
     });
+
+    try {
+      final dbState = await SyncService.checkDatabaseState();
+      if (dbState['status'] == 'ok' && mounted) {
+        debugPrint('Desktop DB customer count: ${dbState['count']}');
+      }
+    } catch (_) {
+      // ignore; the customer list request already returned the real state
+    }
   }
 
   @override
