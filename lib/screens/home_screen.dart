@@ -23,6 +23,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshCustomers();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadServerAddress();
+    _refreshCustomers();
+  }
+
   void _loadServerAddress() {
     setState(() {
       _serverAddress = SyncService.getServerAddress();
@@ -153,37 +160,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: customers.length,
-                  itemBuilder: (context, index) {
-                    final customer = customers[index];
-                    final meterNumber = customer['meter_number'] ?? 'N/A';
-                    final name = customer['name'] ?? 'Unknown';
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    _loadServerAddress();
+                    _refreshCustomers();
+                  },
+                  child: ListView.builder(
+                    itemCount: customers.length,
+                    itemBuilder: (context, index) {
+                      final customer = customers[index];
+                      final meterNumber = customer['meter_number'] ?? 'N/A';
+                      final name = customer['name'] ?? 'Unknown';
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: ListTile(
-                        leading: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              meterNumber.isNotEmpty ? meterNumber[0] : '?',
-                              style: const TextStyle(fontSize: 20),
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: ListTile(
+                          leading: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                meterNumber.isNotEmpty ? meterNumber[0] : '?',
+                                style: const TextStyle(fontSize: 20),
+                              ),
                             ),
                           ),
+                          title: Text(name),
+                          subtitle: Text('رقم العداد: $meterNumber'),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () => _navigateToReading(meterNumber, name),
                         ),
-                        title: Text(name),
-                        subtitle: Text('رقم العداد: $meterNumber'),
-                        trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () => _navigateToReading(meterNumber, name),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
             ),
