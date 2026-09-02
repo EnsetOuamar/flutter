@@ -45,6 +45,22 @@ class _ReadingEntryScreenState extends State<ReadingEntryScreen> {
 
     try {
       final reading = double.parse(readingText);
+
+      final previousData = await _lastReadingFuture;
+      final previousReading =
+          (previousData['last_reading'] as num?)?.toDouble() ?? 0.0;
+      if (reading < previousReading) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'القراءة الجديدة لا يمكن أن تكون أقل من القراءة السابقة ($previousReading)',
+              ),
+            ),
+          );
+        }
+        return;
+      }
       
       setState(() => _isSubmitting = true);
 
