@@ -185,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         child: ListTile(
                           leading: Container(
-                            width: 50,
+                            constraints: const BoxConstraints(minWidth: 64, maxWidth: 110),
                             height: 50,
                             decoration: BoxDecoration(
                               color: Colors.blue.shade100,
@@ -193,8 +193,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                meterNumber.isNotEmpty ? meterNumber[0] : '?',
-                                style: const TextStyle(fontSize: 20),
+                                meterNumber.toString(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
