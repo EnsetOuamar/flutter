@@ -60,6 +60,16 @@ class SyncService {
             .toList();
 
         await _prefs.setString(_customersCacheKey, json.encode(customers));
+        for (final customer in customers) {
+          final meterNumber = customer['meter_number']?.toString();
+          if (meterNumber != null && customer['last_reading'] is num) {
+            await _cacheLastReading(meterNumber, {
+              'meter_number': meterNumber,
+              'last_reading': customer['last_reading'],
+              'found': customer['found'] == true,
+            });
+          }
+        }
         return customers;
       } else {
         throw Exception('Failed to fetch customers: ${response.statusCode}');
