@@ -7,6 +7,7 @@ class SyncService {
   static late SharedPreferences _prefs;
   static const String _serverAddressKey = 'server_address';
   static const String _readingsKey = 'pending_readings';
+  static const String _customersCacheKey = 'customers_cache';
   
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -57,10 +58,7 @@ class SyncService {
             .map((item) => Map<String, dynamic>.from(item as Map))
             .toList();
 
-        if (customers.isEmpty) {
-          return [];
-        }
-
+        await _prefs.setString(_customersCacheKey, json.encode(customers));
         return customers;
       } else {
         throw Exception('Failed to fetch customers: ${response.statusCode}');
@@ -68,6 +66,32 @@ class SyncService {
     } catch (e) {
       throw Exception('Error fetching customers: $e');
     }
+  }
+
+  /// Fetch customers from the desktop, falling back to the last known list.
+  static Future<List<Map<String, dynamic>>> fetchCustomersWithCache() async {
+    try {
+      return await fetchCustomers();
+    } catch (error) {
+      final cachedCustomers = getCachedCustomers();
+      if (cachedCustomers.isNotEmpty) {
+        return cachedCustomers;
+      }
+      throw Exception('Unable to load customers: $error');
+    }
+  }
+
+  /// Get the last customer list received from the desktop.
+  static List<Map<String, dynamic>> getCachedCustomers() {
+    final customersJson = _prefs.getString(_customersCacheKey);
+    if (customersJson == null || customersJson.isEmpty) {
+      return [];
+    }
+
+    final List<dynamic> decoded = json.decode(customersJson);
+    return decoded
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   /// Check the desktop database state directly by requesting a live list.
