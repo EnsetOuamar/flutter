@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refreshCustomers() async {
     setState(() {
       if (_serverAddress != null && _serverAddress!.isNotEmpty) {
-        _customersFuture = SyncService.fetchCustomers();
+        _customersFuture = SyncService.fetchCustomersWithCache();
       } else {
         _customersFuture = Future.error('No server configured');
       }
@@ -172,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return RefreshIndicator(
                   onRefresh: () async {
                     _loadServerAddress();
-                    _refreshCustomers();
+                    await _refreshCustomers();
                   },
                   child: ListView.builder(
                     itemCount: customers.length,
