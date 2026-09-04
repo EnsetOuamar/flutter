@@ -8,6 +8,7 @@ class SyncService {
   static const String _serverAddressKey = 'server_address';
   static const String _readingsKey = 'pending_readings';
   static const String _customersCacheKey = 'customers_cache';
+  static const String _lastReadingsCacheKey = 'last_readings_cache';
   
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -133,7 +134,7 @@ class SyncService {
   static Future<Map<String, dynamic>> getLastReading(String meterNumber) async {
     final serverAddress = getServerAddress();
     if (serverAddress == null || serverAddress.isEmpty) {
-      throw Exception('Server address not configured');
+      return _getCachedLastReadingOrThrow(meterNumber, 'Server address not configured');
     }
     
     try {
@@ -144,13 +145,42 @@ class SyncService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body) as Map<String, dynamic>;
+        final result = json.decode(response.body) as Map<String, dynamic>;
+        await _cacheLastReading(meterNumber, result);
+        return result;
       } else {
         throw Exception('Failed to get last reading: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error fetching last reading: $e');
+      return _getCachedLastReadingOrThrow(meterNumber, 'Error fetching last reading: $e');
     }
+  }
+
+  static Map<String, dynamic> _getCachedLastReadingOrThrow(
+    String meterNumber,
+    String errorMessage,
+  ) {
+    final readingsJson = _prefs.getString(_lastReadingsCacheKey);
+    if (readingsJson != null && readingsJson.isNotEmpty) {
+      final cachedReadings = json.decode(readingsJson) as Map<String, dynamic>;
+      final cachedReading = cachedReadings[meterNumber];
+      if (cachedReading is Map) {
+        return Map<String, dynamic>.from(cachedReading);
+      }
+    }
+    throw Exception(errorMessage);
+  }
+
+  static Future<void> _cacheLastReading(
+    String meterNumber,
+    Map<String, dynamic> reading,
+  ) async {
+    final readingsJson = _prefs.getString(_lastReadingsCacheKey);
+    final cachedReadings = readingsJson == null || readingsJson.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(json.decode(readingsJson) as Map);
+    cachedReadings[meterNumber] = reading;
+    await _prefs.setString(_lastReadingsCacheKey, json.encode(cachedReadings));
   }
   
   /// Add a reading to pending (stored locally)
@@ -233,6 +263,17 @@ class SyncService {
       if (response.statusCode == 200) {
         final result = json.decode(response.body) as Map<String, dynamic>;
         if (result['status'] == 'success') {
+          for (final reading in readings) {
+            final meterNumber = reading['meter_number']?.toString();
+            final value = reading['reading'];
+            if (meterNumber != null && value is num) {
+              await _cacheLastReading(meterNumber, {
+                'meter_number': meterNumber,
+                'last_reading': value,
+                'found': true,
+              });
+            }
+          }
           await clearPendingReadings();
         }
         return result;
